@@ -1,0 +1,350 @@
+
+library(dplyr)
+install.packages("dplyr")
+
+install.packages("sos")
+
+
+# reading data from csv file and storing it into data2
+data2 <- read.csv("C:\\Users\\025\\IPL Matches 2008-2020.csv", header=TRUE, stringsAsFactors=FALSE)
+
+
+data3 <- read.csv("C:\\Users\\025\\IPL Ball-by-Ball 2008-2020.csv", header=TRUE, stringsAsFactors=FALSE)
+# first 6 rows of the data 
+
+#getting head fro data2 and data3 respectively
+df1 = head(data2)
+df1
+
+df2 = head(data3)
+df2
+
+#gettig dimensions for the above datasets
+dim(data2)
+dim(data3)
+
+#merge both the csv dataframes
+df = merge(data2,data3,by = "id")
+head(df)
+dim(df)
+
+#getting columnlist
+colnames(df)
+df
+#selecting a required number of columns
+df <- subset(df, select = c(id,venue,team1,team2,winner,inning,over,ball,total_runs,is_wicket,batting_team,bowling_team))
+head(df)
+
+head(df)
+View(head(df))
+
+#grouping based on id and inning
+df_grouped <- group_by(df, id,inning)
+df_grouped
+
+#remodifying the datafram such that target  = sum of total runs  + 1
+df_summary <- summarize(df_grouped, target= sum(total_runs) + 1)
+df_summary
+#getting column names of summarized dataframe (df) above
+colnames(df_summary)
+
+
+df_summary <- data.frame(df_summary, index = row.names(df_summary))
+
+
+
+
+df_summary
+# resetting index
+df_summary <- subset(df_summary, select = -index)
+rownames(df_summary) <- c(0:1629)
+df_summary
+head(df_summary)
+
+#modified dataframe for 1st inning
+df_summary <- df_summary[df_summary$inning == 1, ]
+df_summary
+
+#merge original df with summarized dataframe
+df = merge(df,df_summary,by = "id")
+df
+
+dim(df)
+
+#getting dataframe for 2nd inning
+df = df[df$inning.x == 2,]
+df
+
+dim(df)
+head(df)
+
+#removing team1,team2,inning.x,inning.y
+df <- subset(df, select = -c(team1,team2,inning.x,inning.y))
+df
+
+head(df)
+
+#replacing old teams with new teams of the same state
+df$batting_team <- sub("Delhi Daredevils","Delhi Capitals",df$batting_team)
+head(df)
+
+
+df$bowling_team <- sub("Delhi Daredevils","Delhi Capitals",df$bowling_team)
+head(df)
+
+df$batting_team <- sub("Deccan Chargers","Sunrisers Hyderabad",df$batting_team)
+head(df)
+
+
+df$bowling_team <- sub("Deccan Chargers","Sunrisers Hyderabad",df$bowling_team)
+head(df)
+
+
+df <-df[!(df$batting_team == "Kochi Tuskers Kerala"), ]
+df
+
+df <-df[!(df$bowling_team == "Kochi Tuskers Kerala"), ]
+df
+
+df <-df[!(df$batting_team == "Pune Warriors"), ]
+df <-df[!(df$bowling_team == "Pune Warriors"), ]
+
+df <-df[!(df$batting_team == "Gujarat Lions"), ]
+df <-df[!(df$bowling_team == "Gujarat Lions"), ]
+
+df <-df[!(df$batting_team == "Rising Pune Supergiants"), ]
+df <-df[!(df$bowling_team == "Rising Pune Supergiants"), ]
+
+df <-df[!(df$batting_team == "Rising Pune Supergiant"), ]
+df <-df[!(df$bowling_team == "Rising Pune Supergiant"), ]
+
+#getting unique values in bowling team
+unique_values <- unique(df$bowling_team)
+unique_values
+
+unique_values <- unique(df$batting_team)
+unique_values
+
+colSums(is.na(df))
+
+df<- na.omit(df)
+
+df
+
+colSums(is.na(df))
+
+str(df)
+
+#create a new column called ball number 
+df$Ball_Number <- (df$over * 6) + df$ball
+df
+
+head(df)
+df
+
+#create new datframe with id,total runs ,iswicket
+data <- df[c("id", "total_runs", "is_wicket")]
+data
+
+head(data)
+
+dim(data)
+
+data %>%
+  group_by(id)
+
+#grouping with respect to id
+data %>% group_by(id)
+
+
+head(data)
+
+# cumulative sum of data with respect to id
+data <- data %>%
+  group_by(id) %>%
+  mutate_all(cumsum)
+data
+
+dim(data)
+
+#remove id 
+data <- subset(data, select = -id)
+data
+
+data <- data.frame(data)
+
+head(data)
+#
+
+#reset index from 121 to 80434 
+rownames(data) <- c(121:80434)
+data<- data.frame(data, index = row.names(data))
+rownames(data) <- c(0:80313)
+
+
+head(data)
+
+dim(data)
+
+head(df)
+
+dim(df)
+rownames(df) <- c(121:80434)
+df<- data.frame(df, index = row.names(df))
+head(df)
+
+rownames(df) <- c(0:80313)
+head(df)
+
+head(data)
+
+#renaming columns for easy calling later on
+names(data)[names(data)== "total_runs"] <- "Runs" 
+
+names(data)[names(data)== "is_wicket"] <- "Wickets"
+
+head(data)
+
+head(df)
+
+# combinign runs and wickets such that they correspnd to each other and a common id
+df <- cbind(df, data$Runs, data$Wickets)
+
+names(df)[names(df)== "data$Runs"] <- "Runs" 
+
+names(df)[names(df)== "data$Wickets"] <- "Wickets"
+
+# iswicket = wickets 
+#df[c('total_runs', 'is_wicket')] <- data[c('total_runs', 'is_wicket')]
+
+head(df)
+dim(df)
+
+
+data
+
+#add to new columns balls left and runs left 
+df['Balls_Left'] <- 120-df['Ball_Number']
+df['Runs_Left'] <- df['target']-df['Runs']
+head(df)
+
+df <- df[df$id != 335982, ]
+head(df)
+
+#wickets left
+df['Wickets_Left'] <- 10 - df['is_wicket']
+head(df)
+
+#remove index
+df <- subset(df,select = -index)
+head(df)
+# remove over,ball,total_runs,is_wicket,Ball_Number,Wickets
+df <- subset(df,select = -c(over,ball,total_runs,is_wicket,Ball_Number,Wickets))
+head(df)
+dim(df)
+  # calculating runrates - required and current
+df['Current_RR'] <- df['Runs'] * 6 / (120 - df['Balls_Left'])
+head(df)
+df['Required RR'] <-  df['Runs_Left']*6/df['Balls_Left']
+head(df)
+dim(df)
+
+na_count <-sapply(df, function(y) sum(length(which(is.na(df)))))
+
+na_count
+df= na.omit(df)
+
+summary(df)
+View(summary(df))
+
+#create a function where batting team is winner
+res <- function(row) {
+  if (!is.na(row["batting_team"]) && !is.na(row["winner"]) && row["batting_team"] == row["winner"]) {
+    if (row['batting_team'] == row['winner']) {
+      return(1)
+    } else {
+      return(0)
+    }
+  }
+}
+res
+df$result <- apply(df, MARGIN = 1, FUN = res)
+
+head(df)
+
+summary(df)
+
+view(summary(df))
+#create a datafram where runsleft >=0 and Ballsleft >= 0
+df <- df[df$Runs_Left >= 0, ]
+
+df <- df[df$Balls_Left >= 0, ]
+
+
+View(summary(df))
+
+df <- df[sample(nrow(df)), ]
+
+head(df)
+
+colSums(is.na(df))
+
+#find unique venues
+venues <- unique(df$venue)
+venues
+
+#find length
+length(venues)
+
+# remove data which is the same venue but different name
+df$venue <- gsub('M.Chinnaswamy Stadium', 'M Chinnaswamy Stadium', df$venue)
+df$venue <- gsub('Punjab Cricket Association IS Bindra Stadium, Mohali', 'Punjab Cricket Association Stadium, Mohali', df$venue)
+df$venue <- gsub('Maharashtra Cricket Association Stadium', 'Subrata Roy Sahara Stadium', df$venue)
+
+#find venue again to recheck
+venue <- unique(df$venue)
+venue
+
+
+#find length to recheck
+length(venue)
+library(forcats)
+
+install.packages("labelled")
+install.packages("forcats")
+
+df$venue <- as_factor(df$venue)
+df$batting_team <- as_factor(df$batting_team)
+df$bowling_team <- as_factor(df$bowling_team)
+
+X <- df[c('batting_team', 'bowling_team', 'venue', 'Runs_Left', 'Balls_Left', 'Wickets_Left')]
+y <- df$result
+
+set.seed(123)
+train_index <- sample(nrow(df), floor(0.75 * nrow(df)))
+train_data <- df[train_index,]
+test_data <- df[-train_index,]
+
+X_train <- train_data[, c('batting_team', 'bowling_team', 'venue', 'Runs_Left', 'Balls_Left', 'Wickets_Left')]
+y_train <- train_data[,'result']
+X_test <- test_data[, c('batting_team', 'bowling_team', 'venue', 'Runs_Left', 'Balls_Left', 'Wickets_Left')]
+y_test <- test_data[,'result']
+
+class(train_data$result)
+
+
+model <- glm(result ~ ., data = train_data, family = binomial())
+
+y_pred <- predict(model, X_test, type = "response") > 0.5
+accuracy <- mean(y_pred == y_test)
+print(paste0("Accuracy: ", accuracy))
+
+new_observation <- df.frame(batting_team = 4, bowling_team = 0, venue = 24, Runs_Left = 90, Balls_Left = 60, Wickets_Left = 6)
+prob <- predict(model, new_observation, type = "response")
+print(prob)
+
+saveRDS(model, file = "model.rds")
+loaded_model <- readRDS(file = "model.rds")
+new_prob <- predict(loaded_model, new_observation, type = "response")
+print(new_prob)
+
